@@ -1,0 +1,15 @@
+<webservices xmlns="http://www.jboss.com/xml/ns/javaee"
+	version="1.2">
+	<property>
+		<name>cxf.management.enabled</name>
+		<value>true</value>
+	</property>
+	<property>
+		<name>cxf.management.installResponseTimeInterceptors</name>
+		<value>true</value>
+	</property>
+	<webservice-description>
+		<webservice-description-name>ReportIncidentService</webservice-description-name>
+		<wsdl-publish-location>classpath://wsdl/ReportIncidentService.wsdl</wsdl-publish-location>
+	</webservice-description>
+</webservices>
