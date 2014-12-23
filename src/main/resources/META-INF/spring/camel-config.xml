@@ -42,7 +42,7 @@
 	<!-- this is the CXF web service we use as the front end -->
 	<cxf:cxfEndpoint id="reportIncident" address="/incident"
 		endpointName="s:ReportIncidentEndpoint" serviceName="s:ReportIncidentEndpointService"
-		wsdlURL="etc/report_incident.wsdl" xmlns:s="http://reportincident.g.a.net" />
+		wsdlURL="wsdl/report_incident.wsdl" xmlns:s="http://reportincident.g.a.net" />
 
 	<bean id="destinationResolver"
 		class="org.springframework.jms.support.destination.JndiDestinationResolver" />
