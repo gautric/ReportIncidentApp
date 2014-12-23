@@ -6,29 +6,35 @@ from CXF WebService Proxy example Camel
 
 
 You will need to compile this example first:
-  mvn compile
+```
+	mvn compile
+```
 
 Execute JBoss cli script 
-
-  jboss-cli.sh  --file src/main/jboss/configure-jms.cli
-
+```
+	jboss-cli.sh  --file src/main/jboss/configure-jms.cli
+```
 To run the example type:
-  mvn jboss:deploy
-  
+```
+	mvn jboss:deploy
+```
 The proxied webservice is located at
+```
   http://<hostname>/report-incident/proxy/incident
-
+```
 The real webservice is located at
-  http://<hostname>/report-incident/soap/incident
-
+```
+	http://<hostname>/report-incident/soap/incident
+```
 The webservice WSDL is exposed at:
-  http://<hostname>/report-incident/soap/incident?wsdl
-
+```
+	http://<hostname>/report-incident/soap/incident?wsdl
+```
 
 To make a SOAP call open soapUI or another SOAP query tool and create a new
 project w/WSDL of http://<hostname>/report-incident/soap/incident?wsdl.
 Then make SOAP requests of this format:
-
+```
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:rep="http://reportincident.g.a.net">
    <soapenv:Header/>
    <soapenv:Body>
@@ -43,8 +49,9 @@ Then make SOAP requests of this format:
       </rep:inputReportIncident>
    </soapenv:Body>
 </soapenv:Envelope>
-
+```
 This example comes from 
-  http://camel.apache.org/cxf-proxy-example.html
-
+```
+http://camel.apache.org/cxf-proxy-example.html
+```
 Raise a Issue ticket on github if needed
