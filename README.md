@@ -52,6 +52,6 @@ Then make SOAP requests of this format:
 ```
 This example comes from 
 ```
-http://camel.apache.org/cxf-proxy-example.html
+	http://camel.apache.org/cxf-proxy-example.html
 ```
 Raise a Issue ticket on github if needed
