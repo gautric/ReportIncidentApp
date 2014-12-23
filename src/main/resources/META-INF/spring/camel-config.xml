@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+	license agreements. See the NOTICE file distributed with this work for additional 
+	information regarding copyright ownership. The ASF licenses this file to 
+	You under the Apache License, Version 2.0 (the "License"); you may not use 
+	this file except in compliance with the License. You may obtain a copy of 
+	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+	by applicable law or agreed to in writing, software distributed under the 
+	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+	OF ANY KIND, either express or implied. See the License for the specific 
+	language governing permissions and limitations under the License. -->
+
+<!-- START SNIPPET: e1 -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
+	xmlns:cxf="http://camel.apache.org/schema/cxf" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+       http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+       http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd">
+
+	<!-- spring property placeholder, ignore resource not found as the file 
+		resource is for unit testing -->
+	<context:property-placeholder
+		location="classpath:incident.properties,file:target/custom.properties"
+		ignore-resource-not-found="true" />
+
+
+	<jee:jndi-lookup id="jmsQueueConnectionFactory"
+		jndi-name="java:/ConnectionFactory" />
+
+	<bean name="jms" class="org.apache.camel.component.jms.JmsComponent">
+		<property name="connectionFactory" ref="jmsQueueConnectionFactory" />
+	</bean>
+
+	<!-- bean that enriches the SOAP request -->
+	<bean id="enrichBean" class="net.a.g.reportincident.EnrichBean" />
+
+	<!-- this is the CXF web service we use as the front end -->
+	<cxf:cxfEndpoint id="reportIncident" address="/incident"
+		endpointName="s:ReportIncidentEndpoint" serviceName="s:ReportIncidentEndpointService"
+		wsdlURL="etc/report_incident.wsdl" xmlns:s="http://reportincident.g.a.net" />
+
+	<bean id="destinationResolver"
+		class="org.springframework.jms.support.destination.JndiDestinationResolver" />
+
+	<bean name="endBean"
+		class="net.a.g.reportincident.ReportIncidentEndpointMock">
+		<property name="errorCode" value="INCIDENT_ENREGISTRE" />
+	</bean>
+	<bean name="severiteBean"
+		class="net.a.g.reportincident.ReportIncidentEndpointMock">
+		<property name="errorCode" value="SEVERITE_INCONNUE" />
+	</bean>
+	<bean name="criticalBean"
+		class="net.a.g.reportincident.ReportIncidentEndpointMock">
+		<property name="errorCode" value="NO_DETAILS_4_CRITICAL" />
+	</bean>
+
+	<!-- this is the Camel route which proxies the real web service and forwards 
+		SOAP requests to it -->
+	<camelContext xmlns="http://camel.apache.org/schema/spring"
+		xmlns:ri="http://reportincident.g.a.net">
+		
+		<route id="input-route">
+			<!-- CXF consumer using MESSAGE format -->
+			<from uri="cxf:bean:reportIncident?dataFormat=PAYLOAD" />
+			<to uri="direct:main-route" />
+		</route>
+		<route id="main-route">
+			<from uri="direct:main-route" />
+			<choice>
+				<when>
+					<xpath>(/ri:inputReportIncident/severity/text() = 'Low') or (/ri:inputReportIncident/severity/text() = 'Major') or (/ri:inputReportIncident/severity/text() = 'Medium') or (/ri:inputReportIncident/severity/text() = 'Critical')</xpath>
+					<to uri="direct:process-route" />
+				</when>
+				<otherwise>
+					<to uri="bean:severiteBean" />
+				</otherwise>
+			</choice>
+		</route>
+		<route id="process-route">
+			<from uri="direct:process-route" />
+			<to uri="log:org.apache.camel.example" />
+			<!-- enrich the input by ensure the incidentId parameter is set -->
+			<to uri="bean:enrichBean" />
+			<wireTap uri="direct:wiretap-route" />
+			<to uri="log:org.apache.camel.example" />
+			<unmarshal>
+				<jaxb prettyPrint="true" contextPath="net.a.g.reportincident" />
+			</unmarshal>
+			<to uri="bean:endBean" />
+		</route>
+		<route id="wiretap-route">
+			<from uri="direct:wiretap-route" />
+			<to uri="log:org.apache.camel.example" />
+
+			<setHeader headerName="jms_out_queue">
+				<xpath>/ri:inputReportIncident/severity/text()</xpath>
+			</setHeader>
+			<to uri="log:org.apache.camel.example" />
+			<recipientList>
+				<simple>jms:queue:java:/jms/queue/ReportIncident/${in.header.jms_out_queue}?destinationResolver=#destinationResolver</simple>
+			</recipientList>
+		</route>
+	</camelContext>
+</beans>
+<!-- END SNIPPET: e1 -->

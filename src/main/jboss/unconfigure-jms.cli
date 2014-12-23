@@ -1,0 +1,12 @@
+# Batch script to add the JMS configuration to the JBoss server
+# Start batching commands
+batch
+
+jms-queue remove --queue-address=ReportIncidentLowQueue
+jms-queue remove --queue-address=ReportIncidentMediumQueue
+jms-queue remove --queue-address=ReportIncidentMajorQueue 
+jms-queue remove --queue-address=ReportIncidentCriticalQueue
+jms-queue remove --queue-address=ReportIncidentQueue
+                 
+# Run the batch commands
+run-batch
