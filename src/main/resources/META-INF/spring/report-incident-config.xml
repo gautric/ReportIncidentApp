@@ -24,10 +24,8 @@
 
 	<!-- spring property placeholder, ignore resource not found as the file 
 		resource is for unit testing -->
-	<context:property-placeholder
-		location="classpath:incident.properties,file:target/custom.properties"
+	<context:property-placeholder location="classpath:incident.properties"
 		ignore-resource-not-found="true" />
-
 
 	<jee:jndi-lookup id="jmsQueueConnectionFactory"
 		jndi-name="java:/ConnectionFactory" />
@@ -47,62 +45,59 @@
 	<bean id="destinationResolver"
 		class="org.springframework.jms.support.destination.JndiDestinationResolver" />
 
-	<bean name="endBean"
-		class="net.a.g.reportincident.ReportIncidentEndpointMock">
+	<bean name="endBean" class="net.a.g.reportincident.ReportIncidentEndpointMock">
 		<property name="errorCode" value="INCIDENT_ENREGISTRE" />
 	</bean>
-	<bean name="severiteBean"
-		class="net.a.g.reportincident.ReportIncidentEndpointMock">
+	<bean name="severiteBean" class="net.a.g.reportincident.ReportIncidentEndpointMock">
 		<property name="errorCode" value="SEVERITE_INCONNUE" />
 	</bean>
-	<bean name="criticalBean"
-		class="net.a.g.reportincident.ReportIncidentEndpointMock">
+	<bean name="criticalBean" class="net.a.g.reportincident.ReportIncidentEndpointMock">
 		<property name="errorCode" value="NO_DETAILS_4_CRITICAL" />
 	</bean>
 
 	<!-- this is the Camel route which proxies the real web service and forwards 
 		SOAP requests to it -->
-	<camelContext xmlns="http://camel.apache.org/schema/spring"
+	<camelContext id="Report-Incident-Camel-Context" xmlns="http://camel.apache.org/schema/spring"
 		xmlns:ri="http://reportincident.g.a.net">
-		
+
 		<route id="input-route">
 			<!-- CXF consumer using MESSAGE format -->
 			<from uri="cxf:bean:reportIncident?dataFormat=PAYLOAD" />
-			<to uri="direct:main-route" />
+			<to id="log-input" uri="log:net.a.g.reportincident" />
+			<to id="direct:main-route" uri="direct:main-route" />
 		</route>
 		<route id="main-route">
 			<from uri="direct:main-route" />
-			<choice>
-				<when>
+			<to id="log-main" uri="log:net.a.g.reportincident" />
+			<choice id="check-severity">
+				<when id="if-low-to-critical-severity">
 					<xpath>(/ri:inputReportIncident/severity/text() = 'Low') or (/ri:inputReportIncident/severity/text() = 'Major') or (/ri:inputReportIncident/severity/text() = 'Medium') or (/ri:inputReportIncident/severity/text() = 'Critical')</xpath>
-					<to uri="direct:process-route" />
+					<to id="direct:process-route" uri="direct:process-route" />
 				</when>
-				<otherwise>
-					<to uri="bean:severiteBean" />
+				<otherwise id="else">
+					<to id="bean:severiteBean" uri="bean:severiteBean" />
 				</otherwise>
 			</choice>
 		</route>
 		<route id="process-route">
 			<from uri="direct:process-route" />
-			<to uri="log:org.apache.camel.example" />
-			<!-- enrich the input by ensure the incidentId parameter is set -->
-			<to uri="bean:enrichBean" />
-			<wireTap uri="direct:wiretap-route" />
-			<to uri="log:org.apache.camel.example" />
-			<unmarshal>
+			<to id="log-process" uri="log:net.a.g.reportincident" />
+			<bean id="enrich-xml-body" ref="enrichBean" />
+			<wireTap id="direct:wiretap-route" uri="direct:wiretap-route" />
+			<unmarshal id="xmltojava">
 				<jaxb prettyPrint="true" contextPath="net.a.g.reportincident" />
 			</unmarshal>
-			<to uri="bean:endBean" />
+			<to id="process-bean" uri="bean:endBean" />
 		</route>
 		<route id="wiretap-route">
 			<from uri="direct:wiretap-route" />
-			<to uri="log:org.apache.camel.example" />
+			<to id="log-wiretap" uri="log:net.a.g.reportincident.log" />
 
-			<setHeader headerName="jms_out_queue">
+			<setHeader id="update-header-with-severity" headerName="jms_out_queue">
 				<xpath>/ri:inputReportIncident/severity/text()</xpath>
 			</setHeader>
-			<to uri="log:org.apache.camel.example" />
-			<recipientList>
+
+			<recipientList id="jms:queue:java:/jms/queue/ReportIncident">
 				<simple>jms:queue:java:/jms/queue/ReportIncident/${in.header.jms_out_queue}?destinationResolver=#destinationResolver</simple>
 			</recipientList>
 		</route>
