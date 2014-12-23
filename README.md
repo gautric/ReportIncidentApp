@@ -6,16 +6,16 @@ from CXF WebService Proxy example Camel
 
 
 You will need to compile this example first:
-```
+```bash
 	mvn compile
 ```
 
 Execute JBoss cli script 
-```
+```bash
 	jboss-cli.sh  --file src/main/jboss/configure-jms.cli
 ```
 To run the example type:
-```
+```bash
 	mvn jboss:deploy
 ```
 The proxied webservice is located at
@@ -34,7 +34,7 @@ The webservice WSDL is exposed at:
 To make a SOAP call open soapUI or another SOAP query tool and create a new
 project w/WSDL of http://<hostname>/report-incident/soap/incident?wsdl.
 Then make SOAP requests of this format:
-```
+```xml
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:rep="http://reportincident.g.a.net">
    <soapenv:Header/>
    <soapenv:Body>
