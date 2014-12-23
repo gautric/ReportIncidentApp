@@ -91,7 +91,7 @@
 		</route>
 		<route id="wiretap-route">
 			<from uri="direct:wiretap-route" />
-			<to id="log-wiretap" uri="log:net.a.g.reportincident.log" />
+			<to id="log-wiretap" uri="log:net.a.g.reportincident" />
 
 			<setHeader id="update-header-with-severity" headerName="jms_out_queue">
 				<xpath>/ri:inputReportIncident/severity/text()</xpath>
