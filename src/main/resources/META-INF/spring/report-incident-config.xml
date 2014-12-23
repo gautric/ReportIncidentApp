@@ -9,8 +9,6 @@
 	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
 	OF ANY KIND, either express or implied. See the License for the specific 
 	language governing permissions and limitations under the License. -->
-
-<!-- START SNIPPET: e1 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
 	xmlns:cxf="http://camel.apache.org/schema/cxf" xmlns:context="http://www.springframework.org/schema/context"
@@ -58,40 +56,43 @@
 	<!-- this is the Camel route which proxies the real web service and forwards 
 		SOAP requests to it -->
 	<camelContext id="Report-Incident-Camel-Context" xmlns="http://camel.apache.org/schema/spring"
-		xmlns:ri="http://reportincident.g.a.net">
+		xmlns:ri="http://reportincident.g.a.net" trace="${net.a.g.reportincident.trace}">
+
+        <propertyPlaceholder  id="Report-Incident-Camel-Context-PlaceHolder" location="classpath:incident.properties"/>
 
 		<route id="input-route">
 			<!-- CXF consumer using MESSAGE format -->
 			<from uri="cxf:bean:reportIncident?dataFormat=PAYLOAD" />
-			<to id="log-input" uri="log:net.a.g.reportincident" />
+			<to id="log-input" uri="log:net.a.g.reportincident.input" />
 			<to id="direct:main-route" uri="direct:main-route" />
 		</route>
 		<route id="main-route">
 			<from uri="direct:main-route" />
-			<to id="log-main" uri="log:net.a.g.reportincident" />
+			<to id="log-main" uri="log:net.a.g.reportincident.main" />
 			<choice id="check-severity">
 				<when id="if-low-to-critical-severity">
 					<xpath>(/ri:inputReportIncident/severity/text() = 'Low') or (/ri:inputReportIncident/severity/text() = 'Major') or (/ri:inputReportIncident/severity/text() = 'Medium') or (/ri:inputReportIncident/severity/text() = 'Critical')</xpath>
 					<to id="direct:process-route" uri="direct:process-route" />
 				</when>
 				<otherwise id="else">
+					<to id="log-error" uri="log:net.a.g.reportincident.main?level=ERROR" />
 					<to id="bean:severiteBean" uri="bean:severiteBean" />
 				</otherwise>
 			</choice>
 		</route>
 		<route id="process-route">
 			<from uri="direct:process-route" />
-			<to id="log-process" uri="log:net.a.g.reportincident" />
+			<to id="log-process" uri="log:net.a.g.reportincident.process" />
 			<bean id="enrich-xml-body" ref="enrichBean" />
-			<wireTap id="direct:wiretap-route" uri="direct:wiretap-route" />
+			<wireTap id="direct:wire-route" uri="{{net.a.g.reportincident.process-route.wiretap}}" />
 			<unmarshal id="xmltojava">
 				<jaxb prettyPrint="true" contextPath="net.a.g.reportincident" />
 			</unmarshal>
 			<to id="process-bean" uri="bean:endBean" />
 		</route>
-		<route id="wiretap-route">
-			<from uri="direct:wiretap-route" />
-			<to id="log-wiretap" uri="log:net.a.g.reportincident" />
+		<route id="jms-route">
+			<from uri="direct:jms-route" />
+			<to id="log-jms" uri="log:net.a.g.reportincident.jms" />
 
 			<setHeader id="update-header-with-severity" headerName="jms_out_queue">
 				<xpath>/ri:inputReportIncident/severity/text()</xpath>
@@ -103,4 +104,3 @@
 		</route>
 	</camelContext>
 </beans>
-<!-- END SNIPPET: e1 -->
