@@ -24,9 +24,9 @@ import org.apache.camel.spring.Main;
  *
  * @version 
  */
-public final class MyMain {
+public final class StandaloneCamelMain {
 
-    private MyMain() {
+    private StandaloneCamelMain() {
         // to comply with check style
     }
 
