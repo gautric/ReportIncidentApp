@@ -33,7 +33,7 @@
 	</bean>
 
 	<!-- bean that enriches the SOAP request -->
-	<bean id="enrichBean" class="net.a.g.reportincident.EnrichBean" />
+	<bean id="injectIdBean" class="net.a.g.reportincident.InjectIdToBodyBean" />
 
 	<!-- this is the CXF web service we use as the front end -->
 	<cxf:cxfEndpoint id="reportIncident" address="/incident"
@@ -83,8 +83,8 @@
 		<route id="process-route">
 			<from uri="direct:process-route" />
 			<to id="log-process" uri="log:net.a.g.reportincident.process" />
-			<bean id="enrich-xml-body" ref="enrichBean" />
-			<wireTap id="direct:wire-route" uri="{{net.a.g.reportincident.process-route.wiretap}}" />
+			<bean id="enrich-xml-body" ref="injectIdBean" />
+			<wireTap id="{{net.a.g.reportincident.process-route.wiretap}}" uri="{{net.a.g.reportincident.process-route.wiretap}}" />
 			<unmarshal id="xmltojava">
 				<jaxb prettyPrint="true" contextPath="net.a.g.reportincident" />
 			</unmarshal>

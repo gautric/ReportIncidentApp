@@ -28,9 +28,9 @@ import org.w3c.dom.Node;
  * @version
  */
 // START SNIPPET: e1
-public class EnrichBean {
+public class InjectIdToBodyBean {
 
-	private static Logger log = Logger.getLogger(EnrichBean.class.getName());
+	private static Logger log = Logger.getLogger(InjectIdToBodyBean.class.getName());
 
 	public Document enrich(Document doc, Exchange exchange) {
 		Node node = doc.getElementsByTagName("id").item(0);
